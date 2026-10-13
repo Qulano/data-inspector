@@ -37,11 +37,14 @@ pip install -r requirements.txt
 
 ### 3. Run Diagnostics
 ```bash
-# Diagnostic mode only:
-python inspector.py dirty_data.csv
+# Run on sample demo data:
+py inspector.py dirty_data.csv
 
 # Diagnostic + Auto-clean mode:
-python inspector.py dirty_data.csv --clean
+py inspector.py dirty_data.csv --clean
+
+# Run on YOUR OWN dataset:
+py inspector.py path/to/your_file.csv --clean
 ```
 
 ---
