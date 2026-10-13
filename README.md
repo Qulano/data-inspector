@@ -26,7 +26,7 @@ Designed for Data Analysts, BI Specialists, and Data Engineers to validate data 
 
 ### 1. Clone the repository & enter the folder
 ```bash
-git clone https://github.com/YOUR_USERNAME/data-inspector.git
+git clone https://github.com/Qulano/data-inspector.git
 cd data-inspector
 ```
 
