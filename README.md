@@ -52,11 +52,13 @@ py inspector.py path/to/your_file.csv --clean
 ## 📊 Diagnostic Dashboard Preview
 
 - **Dirty Dataset (Requires Sanitization):**
+-<img width="868" height="740" alt="Снимок экрана (88)" src="https://github.com/user-attachments/assets/6747aae6-9133-49d2-9bd2-4304abfbc0d3" />
   - Identifies row-level defects with exact line numbers.
   - Flags corrupted schema and duplicate records.
   - Displays dynamic warning panel with calculated Purity Index.
 
 - **Clean Dataset (Verified):**
+-<img width="784" height="214" alt="Снимок экрана (89)" src="https://github.com/user-attachments/assets/f5108190-4966-4e13-964b-5de1c08da344" />
   - Confirms zero defects (`100.0% Purity Index`).
   - Safe for production database loading (`[OK]`).
 
