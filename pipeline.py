@@ -18,7 +18,18 @@ def transform(raw_data):
             seen_ids.append(row[0])
     return clean_rows
 
-def load_to_db(clean_records, db_name = "warehouse.db"):
+def transform_orders(raw_orders, valid_client_ids):
+    header = raw_orders[0]
+    rows = raw_orders[1:]
+    clean_orders = []
+    for index, row in enumerate(rows, start = 1):
+        if len(row) == len(header) and "" not in row and row[1].isdigit() and row[2].isdigit() and int(row[2]) in valid_client_ids:
+            clean_orders.append((row[0], int(row[1]), int(row[2])))
+    return clean_orders
+        
+    
+
+def load_to_db(clean_records, clean_orders, db_name = "warehouse.db"):
     connection = sqlite3.connect(db_name)
     cursor = connection.cursor()
     cursor.execute("DROP TABLE IF EXISTS clients")
@@ -41,15 +52,10 @@ def load_to_db(clean_records, db_name = "warehouse.db"):
         )
     ''')
     
-    products = [
-        ("Ноутбук", 9000, 1),
-        ("Мышка", 3000, 1),
-        ("Монитор", 25000, 10)
-    ]
     cursor.executemany('''
         INSERT INTO orders (item, price, client_id)
         VALUES (?, ?, ?)
-    ''', products)
+    ''', clean_orders)
 
     cursor.executemany('''
         INSERT INTO clients (id, name, age, email)
@@ -57,26 +63,32 @@ def load_to_db(clean_records, db_name = "warehouse.db"):
     ''', clean_records)
     connection.commit()
     connection.close()
-    print(f"[bold green]Успешно загружено в базу: {len(clean_records)} записей![/bold green]")
+    print(f"[bold green]Успешно загружено в базу: {len(clean_records)} записей![/bold green]\n")
     
-raw_records = read_dataset("dirty_data.csv")
-clean = transform(raw_records)
-load_to_db(clean)
+records = read_dataset("dirty_data.csv")
+orders = read_dataset("dirty_orders.csv")
+clean_records = transform(records)
+valid_ids = [client[0] for client in clean_records]
+full_orders = transform_orders(orders, valid_ids)
+load_to_db(clean_records, full_orders)
 
 conn = sqlite3.connect("warehouse.db")
 cur = conn.cursor()
 
 cur.execute("SELECT * FROM  clients")
+print("[bold yellow]Пользователи в базе данных[/bold yellow]")
 for row in cur.fetchall():
     print(row)
 
 cur.execute("SELECT clients.name, orders.item, orders.price FROM clients JOIN orders ON clients.id = orders.client_id")
 report_data = cur.fetchall()
+print("[bold yellow]Покупки[/bold yellow]")
 for row in report_data:
     print(row)
     
 cur.execute("SELECT clients.name, COUNT(orders.item), SUM(orders.price) FROM clients JOIN orders ON clients.id = orders.client_id GROUP BY clients.name")
 analytics_data = cur.fetchall()
+print("[bold yellow]Финансовая аналитика[/bold yellow]")
 for row in analytics_data:
     print(row)
 
