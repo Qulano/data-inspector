@@ -65,14 +65,19 @@ load_to_db(clean)
 
 conn = sqlite3.connect("warehouse.db")
 cur = conn.cursor()
-cur.execute("SELECT * FROM  clients")
 
+cur.execute("SELECT * FROM  clients")
 for row in cur.fetchall():
     print(row)
 
 cur.execute("SELECT clients.name, orders.item, orders.price FROM clients JOIN orders ON clients.id = orders.client_id")
 report_data = cur.fetchall()
 for row in report_data:
+    print(row)
+    
+cur.execute("SELECT clients.name, COUNT(orders.item), SUM(orders.price) FROM clients JOIN orders ON clients.id = orders.client_id GROUP BY clients.name")
+analytics_data = cur.fetchall()
+for row in analytics_data:
     print(row)
 
 
