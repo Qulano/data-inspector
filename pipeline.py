@@ -30,39 +30,38 @@ def transform_orders(raw_orders, valid_client_ids):
     
 
 def load_to_db(clean_records, clean_orders, db_name = "warehouse.db"):
-    connection = sqlite3.connect(db_name)
-    cursor = connection.cursor()
-    cursor.execute("DROP TABLE IF EXISTS clients")
-    cursor.execute("DROP TABLE IF EXISTS orders")
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS clients (
-            id INTEGER,
-            name TEXT,
-            age INTEGER,
-            email TEXT
-        ) 
-    ''')
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS orders (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            item TEXT NOT NULL,
-            price INTEGER NOT NULL,
-            client_id INTEGER NOT NULL,
-            FOREIGN KEY (client_id) REFERENCES clients (id)
-        )
-    ''')
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_orders_client_id ON orders (client_id)")
-    
-    cursor.executemany('''
-        INSERT INTO orders (item, price, client_id)
-        VALUES (?, ?, ?)
-    ''', clean_orders)
+    with sqlite3.connect(db_name) as connection:
+        cursor = connection.cursor()
+        cursor.execute("DROP TABLE IF EXISTS clients")
+        cursor.execute("DROP TABLE IF EXISTS orders")
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS clients (
+                id INTEGER,
+                name TEXT,
+                age INTEGER,
+                email TEXT
+            ) 
+        ''')
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS orders (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                item TEXT NOT NULL,
+                price INTEGER NOT NULL,
+                client_id INTEGER NOT NULL,
+                FOREIGN KEY (client_id) REFERENCES clients (id)
+            )
+        ''')
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_orders_client_id ON orders (client_id)")
+        
+        cursor.executemany('''
+            INSERT INTO orders (item, price, client_id)
+            VALUES (?, ?, ?)
+        ''', clean_orders)
 
-    cursor.executemany('''
-        INSERT INTO clients (id, name, age, email)
-        VALUES (?, ?, ?, ?)
-    ''', clean_records)
-    connection.commit()
+        cursor.executemany('''
+            INSERT INTO clients (id, name, age, email)
+            VALUES (?, ?, ?, ?)
+        ''', clean_records)
     connection.close()
     print(f"[bold green]Успешно загружено в базу: {len(clean_records)} записей![/bold green]\n")
     
@@ -73,28 +72,28 @@ valid_ids = [client[0] for client in clean_records]
 full_orders = transform_orders(orders, valid_ids)
 load_to_db(clean_records, full_orders)
 
-conn = sqlite3.connect("warehouse.db")
-cur = conn.cursor()
+with sqlite3.connect("warehouse.db") as connection:
+    cur = connection.cursor()
 
-cur.execute("SELECT * FROM  clients")
-print("[bold yellow]Пользователи в базе данных[/bold yellow]")
-for row in cur.fetchall():
-    print(row)
+    cur.execute("SELECT * FROM  clients")
+    print("[bold yellow]Пользователи в базе данных[/bold yellow]")
+    for row in cur.fetchall():
+        print(row)
 
-cur.execute("SELECT clients.name, orders.item, orders.price FROM clients JOIN orders ON clients.id = orders.client_id")
-report_data = cur.fetchall()
-print("[bold yellow]Покупки[/bold yellow]")
-for row in report_data:
-    print(row)
-    
-cur.execute("SELECT clients.name, COUNT(orders.item), SUM(orders.price) FROM clients JOIN orders ON clients.id = orders.client_id GROUP BY clients.name")
-analytics_data = cur.fetchall()
-print("[bold yellow]Финансовая аналитика[/bold yellow]")
-for row in analytics_data:
-    print(row)
+    cur.execute("SELECT clients.name, orders.item, orders.price FROM clients JOIN orders ON clients.id = orders.client_id")
+    report_data = cur.fetchall()
+    print("[bold yellow]Покупки[/bold yellow]")
+    for row in report_data:
+        print(row)
+        
+    cur.execute("SELECT clients.name, COUNT(orders.item), SUM(orders.price) FROM clients JOIN orders ON clients.id = orders.client_id GROUP BY clients.name")
+    analytics_data = cur.fetchall()
+    print("[bold yellow]Финансовая аналитика[/bold yellow]")
+    for row in analytics_data:
+        print(row)
 
 
-conn.close()
+connection.close()
 
 
 
