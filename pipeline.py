@@ -51,6 +51,7 @@ def load_to_db(clean_records, clean_orders, db_name = "warehouse.db"):
             FOREIGN KEY (client_id) REFERENCES clients (id)
         )
     ''')
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_orders_client_id ON orders (client_id)")
     
     cursor.executemany('''
         INSERT INTO orders (item, price, client_id)
