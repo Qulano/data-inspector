@@ -1,11 +1,15 @@
 import sqlite3
 from rich import print
+import sys
+
+
 def read_dataset(file_path):
     dataset = []
     with open(file_path, "r", encoding="utf-8") as file:
         for line in file:
             dataset.append(line.strip().split(","))
     return dataset
+
 
 def transform(raw_data):
     header = raw_data[0]
@@ -18,6 +22,7 @@ def transform(raw_data):
             seen_ids.append(row[0])
     return clean_rows
 
+
 def transform_orders(raw_orders, valid_client_ids):
     header = raw_orders[0]
     rows = raw_orders[1:]
@@ -28,7 +33,6 @@ def transform_orders(raw_orders, valid_client_ids):
     return clean_orders
         
     
-
 def load_to_db(clean_records, clean_orders, db_name = "warehouse.db"):
     with sqlite3.connect(db_name) as connection:
         cursor = connection.cursor()
@@ -65,35 +69,51 @@ def load_to_db(clean_records, clean_orders, db_name = "warehouse.db"):
     connection.close()
     print(f"[bold green]Успешно загружено в базу: {len(clean_records)} записей![/bold green]\n")
     
-records = read_dataset("dirty_data.csv")
-orders = read_dataset("dirty_orders.csv")
-clean_records = transform(records)
-valid_ids = [client[0] for client in clean_records]
-full_orders = transform_orders(orders, valid_ids)
-load_to_db(clean_records, full_orders)
+    
+def generate_report(db_name = "warehouse.db"):
+    with sqlite3.connect("warehouse.db") as connection:
+        cur = connection.cursor()
 
-with sqlite3.connect("warehouse.db") as connection:
-    cur = connection.cursor()
+        cur.execute("SELECT * FROM  clients")
+        print("[bold yellow]Пользователи в базе данных[/bold yellow]")
+        for row in cur.fetchall():
+            print(row)
 
-    cur.execute("SELECT * FROM  clients")
-    print("[bold yellow]Пользователи в базе данных[/bold yellow]")
-    for row in cur.fetchall():
-        print(row)
+        cur.execute("SELECT clients.name, orders.item, orders.price FROM clients JOIN orders ON clients.id = orders.client_id")
+        report_data = cur.fetchall()
+        print("[bold yellow]Покупки[/bold yellow]")
+        for row in report_data:
+            print(row)
+            
+        cur.execute("SELECT clients.name, COUNT(orders.item), SUM(orders.price) FROM clients JOIN orders ON clients.id = orders.client_id GROUP BY clients.name")
+        analytics_data = cur.fetchall()
+        print("[bold yellow]Финансовая аналитика[/bold yellow]")
+        for row in analytics_data:
+            print(row)
+    connection.close() 
+    
+       
+def run_etl():
+    records = read_dataset("dirty_data.csv")
+    orders = read_dataset("dirty_orders.csv")
+    clean_records = transform(records)
+    valid_ids = [client[0] for client in clean_records]
+    full_orders = transform_orders(orders, valid_ids)
+    load_to_db(clean_records, full_orders)
 
-    cur.execute("SELECT clients.name, orders.item, orders.price FROM clients JOIN orders ON clients.id = orders.client_id")
-    report_data = cur.fetchall()
-    print("[bold yellow]Покупки[/bold yellow]")
-    for row in report_data:
-        print(row)
-        
-    cur.execute("SELECT clients.name, COUNT(orders.item), SUM(orders.price) FROM clients JOIN orders ON clients.id = orders.client_id GROUP BY clients.name")
-    analytics_data = cur.fetchall()
-    print("[bold yellow]Финансовая аналитика[/bold yellow]")
-    for row in analytics_data:
-        print(row)
+if "--etl" in sys.argv:
+    run_etl()
+elif "--report" in sys.argv:
+    generate_report()
+else:
+    run_etl()
+    generate_report()
+    
 
 
-connection.close()
+
+
+
 
 
 
